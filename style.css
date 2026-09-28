@@ -1,1 +1,51 @@
+/* =========================================================
+   Game Session Automation Studio – Custom Styles
+   (Works together with Tailwind CSS CDN)
+   ========================================================= */
+
+/* Base body styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #090d14;
+    color: #e2e8f0;
+}
+
+/* Custom thin scrollbars */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #090d14;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Sharp panel look (used on many cards) */
+.sharp-panel {
+    background-color: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 2px;
+}
+
+/* Range slider thumb styling */
+input[type=range]::-webkit-slider-thumb {
+    border-radius: 1px;
+    background: #2563eb;
+}
+
+/* Optional: Firefox range thumb */
+input[type=range]::-moz-range-thumb {
+    border-radius: 1px;
+    background: #2563eb;
+    border: none;
+}
 
