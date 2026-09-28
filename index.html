@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -62,43 +61,47 @@
 
     <!-- Header Navigation Bar -->
     <header class="border-b border-cardBorder bg-[#0c1322] sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-none bg-blue-600 border border-blue-400 flex items-center justify-center text-white font-bold text-base">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <!-- Brand -->
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="w-8 h-8 rounded-none bg-blue-600 border border-blue-400 flex items-center justify-center text-white font-bold text-base shrink-0">
                     <i class="fa-solid fa-terminal"></i>
                 </div>
-                <div>
-                    <h1 class="font-bold text-sm text-white leading-none flex items-center gap-2 tracking-tight">
+                <div class="min-w-0">
+                    <h1 class="font-bold text-sm text-white leading-none flex items-center gap-2 tracking-tight whitespace-nowrap">
                         SESSION ORCHESTRATOR
-                        <span class="text-[10px] font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.2 uppercase">v2.5-blooket</span>
+                        <span class="text-[10px] font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 uppercase">V2</span>
                     </h1>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Automated Multi-Platform Browser Session Controller</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">Multi-Platform Browser Session Controller</p>
                 </div>
             </div>
 
-            <!-- Public IP Telemetry Indicator -->
-            <div class="hidden md:flex items-center gap-2 font-mono text-[11px] bg-darkBg border border-cardBorder px-2.5 py-1">
-                <i class="fa-solid fa-network-wired text-cyan-400"></i>
-                <span class="text-slate-400">Public IP:</span>
-                <span id="public-ip-display" class="text-slate-200 font-semibold">198.51.100.42</span>
-                <span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1 uppercase">SOCKS5 ROTATING</span>
-            </div>
+            <!-- Right side: IP + Tabs -->
+            <div class="flex flex-wrap items-center gap-2 lg:gap-3">
+                <!-- Public IP Telemetry Indicator -->
+                <div class="hidden md:flex items-center gap-2 font-mono text-[11px] bg-darkBg border border-cardBorder px-2.5 py-1 shrink-0">
+                    <i class="fa-solid fa-network-wired text-cyan-400"></i>
+                    <span class="text-slate-400">Public IP:</span>
+                    <span id="public-ip-display" class="text-slate-200 font-semibold">198.51.100.42</span>
+                    <span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1 uppercase">SOCKS5</span>
+                </div>
 
-            <!-- Tab Switcher Navigation -->
-            <nav class="flex items-center gap-1 bg-darkBg p-1 border border-cardBorder text-xs font-medium">
-                <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none bg-blue-600 text-white font-mono uppercase">
-                    <i class="fa-solid fa-gauge-high"></i> <span>Control Dashboard</span>
-                </button>
-                <button id="tab-btn-architecture" onclick="switchTab('architecture')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase">
-                    <i class="fa-solid fa-sitemap"></i> <span>System Architecture</span>
-                </button>
-                <button id="tab-btn-code" onclick="switchTab('code')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase">
-                    <i class="fa-solid fa-code"></i> <span>Backend Code & API</span>
-                </button>
-                <button id="tab-btn-setup" onclick="switchTab('setup')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase border-l border-cardBorder">
-                    <i class="fa-solid fa-book-bookmark text-amber-400"></i> <span>Setup & Execution Guide</span>
-                </button>
-            </nav>
+                <!-- Tab Switcher Navigation -->
+                <nav class="flex items-center gap-1 bg-darkBg p-1 border border-cardBorder text-xs font-medium flex-wrap">
+                    <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none bg-blue-600 text-white font-mono uppercase whitespace-nowrap">
+                        <i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span>
+                    </button>
+                    <button id="tab-btn-architecture" onclick="switchTab('architecture')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase whitespace-nowrap">
+                        <i class="fa-solid fa-sitemap"></i> <span>Architecture</span>
+                    </button>
+                    <button id="tab-btn-code" onclick="switchTab('code')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase whitespace-nowrap">
+                        <i class="fa-solid fa-code"></i> <span>Backend Code</span>
+                    </button>
+                    <button id="tab-btn-setup" onclick="switchTab('setup')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase whitespace-nowrap border-l border-cardBorder">
+                        <i class="fa-solid fa-book-bookmark text-amber-400"></i> <span>How It Works</span>
+                    </button>
+                </nav>
+            </div>
         </div>
     </header>
 
@@ -615,9 +618,9 @@ server.listen(PORT, () => {
             <div class="sharp-panel p-5">
                 <div class="mb-4 pb-3 border-b border-cardBorder bg-panelHeader -mx-5 -mt-5 p-4 border-t-0">
                     <h2 class="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-book-bookmark text-amber-400"></i> How to Make Workers Show Up in Blooket Games
+                        <i class="fa-solid fa-book-bookmark text-amber-400"></i> How It Works
                     </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Key requirements and troubleshooting for Blooket automation.</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Key requirements and troubleshooting for the automation system.</p>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 font-mono text-xs">
