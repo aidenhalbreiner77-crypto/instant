@@ -1,1 +1,713 @@
 
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Session Automation Studio & Architecture Simulator</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d14',
+                        cardBg: '#0f172a',
+                        cardBorder: '#1e293b',
+                        panelHeader: '#162032',
+                        accentBlue: '#2563eb',
+                        accentCyan: '#0891b2',
+                        accentGreen: '#059669',
+                        accentRed: '#dc2626',
+                        accentPurple: '#7c3aed',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Consolas', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Socket.io Client CDN (for optional live backend connection) -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <!-- Custom CSS (separated) -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col bg-darkBg text-slate-200 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Top Slide-down Alert Banner -->
+    <div id="top-alert-banner" class="fixed top-0 left-1/2 -translate-x-1/2 z-[110] transition-all duration-300 transform -translate-y-full opacity-0 max-w-md w-full px-4 pt-3 pointer-events-none">
+        <div class="bg-amber-950/90 border border-amber-500/80 text-amber-200 px-4 py-2.5 shadow-xl flex items-center justify-between font-mono text-xs backdrop-blur-md">
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                <span id="top-alert-msg">Max instance threshold enforced.</span>
+            </div>
+            <button onclick="hideTopAlert()" class="text-amber-400 hover:text-white ml-3 font-bold pointer-events-auto">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Header Navigation Bar -->
+    <header class="border-b border-cardBorder bg-[#0c1322] sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-none bg-blue-600 border border-blue-400 flex items-center justify-center text-white font-bold text-base">
+                    <i class="fa-solid fa-terminal"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm text-white leading-none flex items-center gap-2 tracking-tight">
+                        SESSION ORCHESTRATOR
+                        <span class="text-[10px] font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.2 uppercase">v2.5-blooket</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Automated Multi-Platform Browser Session Controller</p>
+                </div>
+            </div>
+
+            <!-- Public IP Telemetry Indicator -->
+            <div class="hidden md:flex items-center gap-2 font-mono text-[11px] bg-darkBg border border-cardBorder px-2.5 py-1">
+                <i class="fa-solid fa-network-wired text-cyan-400"></i>
+                <span class="text-slate-400">Public IP:</span>
+                <span id="public-ip-display" class="text-slate-200 font-semibold">198.51.100.42</span>
+                <span class="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1 uppercase">SOCKS5 ROTATING</span>
+            </div>
+
+            <!-- Tab Switcher Navigation -->
+            <nav class="flex items-center gap-1 bg-darkBg p-1 border border-cardBorder text-xs font-medium">
+                <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none bg-blue-600 text-white font-mono uppercase">
+                    <i class="fa-solid fa-gauge-high"></i> <span>Control Dashboard</span>
+                </button>
+                <button id="tab-btn-architecture" onclick="switchTab('architecture')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase">
+                    <i class="fa-solid fa-sitemap"></i> <span>System Architecture</span>
+                </button>
+                <button id="tab-btn-code" onclick="switchTab('code')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase">
+                    <i class="fa-solid fa-code"></i> <span>Backend Code & API</span>
+                </button>
+                <button id="tab-btn-setup" onclick="switchTab('setup')" class="px-3 py-1.5 rounded-none flex items-center gap-2 transition-none text-slate-400 hover:text-slate-200 font-mono uppercase border-l border-cardBorder">
+                    <i class="fa-solid fa-book-bookmark text-amber-400"></i> <span>Setup & Execution Guide</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-5 flex flex-col gap-5">
+
+        <!-- ===================== DASHBOARD TAB ===================== -->
+        <section id="tab-dashboard" class="flex flex-col gap-5">
+            
+            <!-- Top Grid: Controls + Cluster Telemetry -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Left Column: Launcher Configuration Panel -->
+                <div class="lg:col-span-5 sharp-panel p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-cardBorder bg-panelHeader -mx-4 -mt-4 p-3 border-t-0">
+                            <h2 class="font-semibold text-xs text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                                <i class="fa-solid fa-sliders text-blue-400"></i> Target & Session Controls
+                            </h2>
+                            <span class="text-[10px] text-slate-400 font-mono uppercase">CONFIG_ENV</span>
+                        </div>
+
+                        <div class="space-y-3 mt-1">
+                            <!-- Category Selector -->
+                            <div>
+                                <label class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Automation Mode</label>
+                                <div class="grid grid-cols-3 gap-1 bg-darkBg p-1 border border-cardBorder">
+                                    <button type="button" onclick="selectCategory('games')" id="cat-games" class="cat-tab-btn py-1.5 px-2 text-[10px] font-mono uppercase bg-blue-600 text-white flex items-center justify-center gap-1.5 transition-none">
+                                        <i class="fa-solid fa-gamepad"></i> Game Pins
+                                    </button>
+                                    <button type="button" onclick="selectCategory('streams')" id="cat-streams" class="cat-tab-btn py-1.5 px-2 text-[10px] font-mono uppercase text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition-none">
+                                        <i class="fa-solid fa-video"></i> Live Viewers
+                                    </button>
+                                    <button type="button" onclick="selectCategory('social')" id="cat-social" class="cat-tab-btn py-1.5 px-2 text-[10px] font-mono uppercase text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition-none">
+                                        <i class="fa-solid fa-users"></i> Followers
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Connection Mode Toggle -->
+                            <div class="p-2 bg-darkBg border border-cardBorder">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-mono text-slate-300 uppercase flex items-center gap-1.5">
+                                        <i class="fa-solid fa-plug text-cyan-400"></i> Connection Mode:
+                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <button id="mode-simulated" onclick="setConnectionMode('simulated')" class="px-2 py-0.5 text-[10px] font-mono uppercase bg-blue-600 text-white border border-blue-500">
+                                            Simulation
+                                        </button>
+                                        <button id="mode-live" onclick="setConnectionMode('live')" class="px-2 py-0.5 text-[10px] font-mono uppercase bg-darkBg text-slate-400 border border-cardBorder hover:text-white">
+                                            Live Node Server
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="live-server-status" class="mt-1.5 text-[10px] font-mono text-slate-500 flex items-center justify-between border-t border-slate-800 pt-1">
+                                    <span>Target Endpoint: <code class="text-slate-300">http://localhost:4000</code></span>
+                                    <span id="socket-conn-badge" class="text-amber-400">STANDBY</span>
+                                </div>
+                            </div>
+
+                            <!-- Platform Groups -->
+                            <div id="plat-group-games" class="plat-group">
+                                <label class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Game Platform</label>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    <button type="button" onclick="selectPlatform('blooket')" id="plat-blooket" class="platform-btn p-2 border border-blue-600 bg-blue-950/40 text-white flex flex-col items-center gap-1 transition-none rounded-none">
+                                        <i class="fa-solid fa-book-open text-blue-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Blooket</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('kahoot')" id="plat-kahoot" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-solid fa-k text-purple-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Kahoot!</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('gimkit')" id="plat-gimkit" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-solid fa-gamepad text-cyan-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Gimkit</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('quizizz')" id="plat-quizizz" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-solid fa-lightbulb text-amber-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Quizizz</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="plat-group-streams" class="plat-group hidden">
+                                <label class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Live Stream Platform</label>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <button type="button" onclick="selectPlatform('twitch')" id="plat-twitch" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-brands fa-twitch text-purple-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Twitch</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('ytlive')" id="plat-ytlive" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-brands fa-youtube text-red-500 text-sm"></i>
+                                        <span class="text-[10px] font-mono">YT Live</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('kick')" id="plat-kick" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-solid fa-bolt text-emerald-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Kick</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="plat-group-social" class="plat-group hidden">
+                                <label class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Social Network</label>
+                                <div class="grid grid-cols-4 gap-1.5">
+                                    <button type="button" onclick="selectPlatform('instagram')" id="plat-instagram" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-brands fa-instagram text-pink-500 text-sm"></i>
+                                        <span class="text-[10px] font-mono">Instagram</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('tiktok')" id="plat-tiktok" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-brands fa-tiktok text-cyan-400 text-sm"></i>
+                                        <span class="text-[10px] font-mono">TikTok</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('twitter')" id="plat-twitter" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-brands fa-x-twitter text-slate-200 text-sm"></i>
+                                        <span class="text-[10px] font-mono">X / Twitter</span>
+                                    </button>
+                                    <button type="button" onclick="selectPlatform('ytsubs')" id="plat-ytsubs" class="platform-btn p-2 border border-cardBorder bg-darkBg text-slate-400 flex flex-col items-center gap-1 hover:border-slate-500 hover:text-white transition-none rounded-none">
+                                        <i class="fa-brands fa-youtube text-red-500 text-sm"></i>
+                                        <span class="text-[10px] font-mono">YT Subs</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Target ID + Validation -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label id="label-target-id" for="game-pin" class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Blooket Game ID</label>
+                                    <div class="relative">
+                                        <input type="text" id="game-pin" value="849201" oninput="validateTargetInput()" onfocus="saveSettingState(this)" onchange="handleSettingChange(this, 'target ID change')" class="w-full bg-darkBg border border-cardBorder rounded-none px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-600 pr-7">
+                                        <i id="icon-target-id" class="fa-solid fa-key absolute right-2.5 top-2 text-slate-500 text-[10px]"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Target Verification</label>
+                                    <div id="target-validation-box" class="w-full h-[31px]">
+                                        <!-- Dynamic validation status injected by JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Prefix + Delay -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div id="prefix-col">
+                                    <label id="label-prefix" for="bot-prefix" class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Bot Nickname Prefix</label>
+                                    <div class="relative" id="prefix-container">
+                                        <input type="text" id="bot-prefix" value="BlooketBot" onfocus="saveSettingState(this)" onchange="handleSettingChange(this, 'prefix change')" class="w-full bg-darkBg border border-cardBorder rounded-none px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-600">
+                                        <span id="prefix-suffix" class="absolute right-2 top-1.5 text-[10px] font-mono text-slate-500">_#</span>
+                                    </div>
+                                </div>
+                                <div id="delay-col">
+                                    <label for="join-delay" class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Stagger Delay (ms)</label>
+                                    <input type="number" id="join-delay" value="600" step="100" min="200" onfocus="saveSettingState(this)" onchange="handleSettingChange(this, 'delay setting change')" class="w-full bg-darkBg border border-cardBorder rounded-none px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-600">
+                                </div>
+                            </div>
+
+                            <!-- Bot Count Slider -->
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label id="label-worker-count" for="bot-count-range" class="text-[11px] font-mono text-slate-400 uppercase">Active Worker Sessions</label>
+                                    <span id="bot-count-val" class="font-mono text-xs font-bold text-blue-400 bg-blue-950/60 border border-blue-800 px-1.5 py-0.5">8 Bots</span>
+                                </div>
+                                <input type="range" id="bot-count-range" min="1" max="50" value="8" onfocus="saveSettingState(this)" oninput="updateBotCountLabel(this.value)" onchange="handleSettingChange(this, 'worker count adjustment')" class="w-full h-1.5 bg-darkBg appearance-none cursor-pointer border border-cardBorder">
+                                <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+                                    <span id="slider-min-label">1 Session</span>
+                                    <span id="slider-mid-label">25 Sessions</span>
+                                    <span id="slider-max-label">50 Sessions</span>
+                                </div>
+                            </div>
+
+                            <!-- Execution Engine -->
+                            <div>
+                                <label for="mode-select" class="block text-[11px] font-mono text-slate-400 mb-1 uppercase">Execution Engine</label>
+                                <select id="mode-select" onfocus="saveSettingState(this)" onchange="handleSettingChange(this, 'execution engine change')" class="w-full bg-darkBg border border-cardBorder rounded-none px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-600">
+                                    <option value="playwright">Playwright + Stealth Context</option>
+                                    <option value="websocket">Fast WebSocket Protocol</option>
+                                    <option value="puppeteer">Puppeteer Worker Pool</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="pt-3 mt-4 border-t border-cardBorder flex gap-1.5">
+                        <button id="btn-launch" onclick="startSimulatedSessions()" class="flex-1 bg-blue-700 hover:bg-blue-600 border border-blue-500 text-white font-mono font-semibold py-2 px-3 rounded-none flex items-center justify-center gap-2 transition-none text-xs uppercase">
+                            <i class="fa-solid fa-play"></i> Launch Pool
+                        </button>
+                        <button id="btn-stop" onclick="stopAllSessions()" disabled class="bg-darkBg hover:bg-red-950/40 border border-cardBorder hover:border-red-600 text-slate-400 hover:text-red-400 font-mono py-2 px-3 rounded-none flex items-center justify-center gap-2 transition-none text-xs uppercase disabled:opacity-40 disabled:cursor-not-allowed">
+                            <i class="fa-solid fa-square"></i> Stop All
+                        </button>
+                        <button onclick="clearLogs()" class="bg-darkBg hover:bg-slate-800 border border-cardBorder text-slate-400 hover:text-white p-2 rounded-none transition-none" title="Clear Event Stream">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Telemetry -->
+                <div class="lg:col-span-7 sharp-panel p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-cardBorder bg-panelHeader -mx-4 -mt-4 p-3 border-t-0">
+                            <h2 class="font-semibold text-xs text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                                <i class="fa-solid fa-chart-line text-cyan-400"></i> Cluster Resource Telemetry
+                            </h2>
+                            <div class="flex items-center gap-2 font-mono text-[11px]">
+                                <span id="cluster-status-dot" class="inline-block w-2 h-2 bg-emerald-500 border border-emerald-400"></span>
+                                <span id="cluster-status-text" class="text-emerald-400 uppercase">Status: Ready</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                            <div class="bg-darkBg border border-cardBorder p-2.5 rounded-none">
+                                <p class="text-[10px] text-slate-400 font-mono uppercase">Active Bots</p>
+                                <p id="stat-active" class="text-xl font-bold text-white font-mono mt-0.5">0 <span class="text-xs font-normal text-slate-500">/ 50</span></p>
+                            </div>
+                            <div class="bg-darkBg border border-cardBorder p-2.5 rounded-none">
+                                <p class="text-[10px] text-slate-400 font-mono uppercase">Available Instances</p>
+                                <p id="stat-available" class="text-xl font-bold text-emerald-400 font-mono mt-0.5">50 <span class="text-xs font-normal text-slate-500">/ 50</span></p>
+                            </div>
+                            <div class="bg-darkBg border border-cardBorder p-2.5 rounded-none">
+                                <p class="text-[10px] text-slate-400 font-mono uppercase">Avg Response Time</p>
+                                <p id="stat-response" class="text-xl font-bold text-amber-400 font-mono mt-0.5">-- ms</p>
+                            </div>
+                            <div class="bg-darkBg border border-cardBorder p-2.5 rounded-none">
+                                <p class="text-[10px] text-slate-400 font-mono uppercase">WS Ping / Jitter</p>
+                                <p id="stat-latency" class="text-xl font-bold text-cyan-400 font-mono mt-0.5">-- ms</p>
+                            </div>
+                            <div class="bg-darkBg border border-cardBorder p-2.5 rounded-none">
+                                <p class="text-[10px] text-slate-400 font-mono uppercase">Lobby Join Success</p>
+                                <p id="stat-success" class="text-xl font-bold text-emerald-500 font-mono mt-0.5">100%</p>
+                            </div>
+                            <div class="bg-darkBg border border-cardBorder p-2.5 rounded-none">
+                                <p class="text-[10px] text-slate-400 font-mono uppercase">Thread Alloc</p>
+                                <p id="stat-threads" class="text-xl font-bold text-purple-400 font-mono mt-0.5">0</p>
+                            </div>
+                        </div>
+
+                        <!-- Gauges -->
+                        <div class="space-y-2.5">
+                            <div>
+                                <div class="flex justify-between text-[11px] font-mono mb-1">
+                                    <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-cpu text-blue-400"></i> Cluster Worker CPU Utilization</span>
+                                    <span id="cpu-text" class="text-white">12%</span>
+                                </div>
+                                <div class="w-full bg-darkBg border border-cardBorder h-2 p-0.5">
+                                    <div id="cpu-bar" class="bg-blue-600 h-full transition-all duration-300" style="width: 12%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[11px] font-mono mb-1">
+                                    <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-memory text-purple-400"></i> Headless V8 Memory Heap</span>
+                                    <span id="ram-text" class="text-white">420 MB / 8.0 GB</span>
+                                </div>
+                                <div class="w-full bg-darkBg border border-cardBorder h-2 p-0.5">
+                                    <div id="ram-bar" class="bg-purple-600 h-full transition-all duration-300" style="width: 8%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[11px] font-mono mb-1">
+                                    <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-gauge-high text-amber-400"></i> Target Endpoint Response Latency</span>
+                                    <span id="response-bar-text" class="text-white">-- ms (Standby)</span>
+                                </div>
+                                <div class="w-full bg-darkBg border border-cardBorder h-2 p-0.5">
+                                    <div id="response-bar" class="bg-amber-500 h-full transition-all duration-300" style="width: 15%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event Log -->
+                    <div class="mt-4 pt-2 border-t border-cardBorder">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-mono text-slate-400 uppercase"><i class="fa-solid fa-terminal text-slate-500 mr-1"></i> Orchestrator Event Log</span>
+                            <span class="text-[10px] text-slate-500 font-mono">Stream: stdout/json</span>
+                        </div>
+                        <div id="orchestrator-log" class="bg-darkBg border border-cardBorder p-2 h-24 overflow-y-auto font-mono text-[11px] space-y-1 text-slate-300 rounded-none">
+                            <div class="text-slate-500">[SYSTEM_INIT] Worker daemon connected. Select target platform &amp; trigger launch...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Workers Grid -->
+            <div class="sharp-panel p-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-cardBorder bg-panelHeader -mx-4 -mt-4 p-3 border-t-0 gap-2">
+                    <div class="flex items-center gap-2 font-mono">
+                        <h2 class="font-semibold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-cubes text-purple-400"></i> Active Workers
+                        </h2>
+                        <span id="active-vs-selected-badge" class="text-[11px] font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-2 py-0.5">
+                            0 / 8 Active
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="grid-search" placeholder="Filter instance ID..." onkeyup="filterSessions()" class="bg-darkBg border border-cardBorder rounded-none px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-blue-600">
+                        <button onclick="kickInactive()" class="text-xs font-mono uppercase bg-darkBg hover:bg-slate-800 border border-cardBorder px-2.5 py-1 text-slate-300 hover:text-white transition-none">
+                            <i class="fa-solid fa-user-slash mr-1"></i> Purge Stale
+                        </button>
+                    </div>
+                </div>
+
+                <div id="session-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 max-h-[480px] overflow-y-auto p-0.5">
+                    <div id="empty-state" class="col-span-full py-12 flex flex-col items-center justify-center text-center text-slate-500 border border-dashed border-cardBorder bg-darkBg">
+                        <i class="fa-solid fa-network-wired text-2xl mb-2 text-slate-600"></i>
+                        <p class="text-xs font-mono uppercase font-semibold text-slate-400">No Active Worker Threads</p>
+                        <p class="text-[11px] font-mono text-slate-600 mt-0.5">Execute "Launch Pool" above to instantiate browser session contexts.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== ARCHITECTURE TAB ===================== -->
+        <section id="tab-architecture" class="hidden flex-col gap-5">
+            <div class="sharp-panel p-5">
+                <div class="mb-4 pb-3 border-b border-cardBorder bg-panelHeader -mx-5 -mt-5 p-4 border-t-0">
+                    <h2 class="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-sitemap text-blue-400"></i> Execution System Architecture
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Data flow and process isolation topology for parallel browser automation.</p>
+                </div>
+
+                <div class="bg-darkBg border border-cardBorder p-5 overflow-x-auto">
+                    <div class="min-w-[760px] flex items-center justify-between relative py-4">
+                        <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-800 -translate-y-1/2 z-0"></div>
+
+                        <div class="relative z-10 w-1/4 bg-cardBg border border-blue-600 p-3 shadow-none hover:bg-slate-800/50 transition-none cursor-pointer rounded-none" onclick="highlightArchStep('frontend')">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-mono text-blue-400 uppercase font-semibold">01. CLIENT</span>
+                                <i class="fa-solid fa-desktop text-blue-400"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-xs font-mono">Control Dashboard</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">Sends JSON/WS events for target PIN and worker scale</p>
+                            <div class="mt-2 pt-1.5 border-t border-cardBorder text-[10px] text-slate-500 font-mono">Protocol: HTTPS / WS</div>
+                        </div>
+
+                        <div class="relative z-10 w-1/4 bg-cardBg border border-purple-600 p-3 shadow-none hover:bg-slate-800/50 transition-none cursor-pointer rounded-none" onclick="highlightArchStep('orchestrator')">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-mono text-purple-400 uppercase font-semibold">02. MASTER</span>
+                                <i class="fa-solid fa-server text-purple-400"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-xs font-mono">Node.js Master API</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">Queues tasks & balances worker pool memory limits</p>
+                            <div class="mt-2 pt-1.5 border-t border-cardBorder text-[10px] text-slate-500 font-mono">Socket.io Gateway</div>
+                        </div>
+
+                        <div class="relative z-10 w-1/4 bg-cardBg border border-cyan-600 p-3 shadow-none hover:bg-slate-800/50 transition-none cursor-pointer rounded-none" onclick="highlightArchStep('workers')">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-mono text-cyan-400 uppercase font-semibold">03. WORKERS</span>
+                                <i class="fa-brands fa-docker text-cyan-400"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-xs font-mono">Playwright Cluster</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">Isolated Chromium contexts executing form fills</p>
+                            <div class="mt-2 pt-1.5 border-t border-cardBorder text-[10px] text-slate-500 font-mono">Headless V8 Context</div>
+                        </div>
+
+                        <div class="relative z-10 w-1/5 bg-cardBg border border-emerald-600 p-3 shadow-none hover:bg-slate-800/50 transition-none cursor-pointer rounded-none" onclick="highlightArchStep('target')">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-mono text-emerald-400 uppercase font-semibold">04. TARGET</span>
+                                <i class="fa-solid fa-cloud text-emerald-400"></i>
+                            </div>
+                            <h3 class="font-bold text-white text-xs font-mono">Blooket Live Server</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">play.blooket.com Endpoint</p>
+                            <div class="mt-2 pt-1.5 border-t border-cardBorder text-[10px] text-slate-500 font-mono">Firebase WebSocket</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="arch-detail-panel" class="mt-4 bg-darkBg border border-cardBorder p-4 rounded-none">
+                    <h4 id="arch-title" class="font-bold text-white text-xs font-mono flex items-center gap-2 uppercase">
+                        <i class="fa-solid fa-circle-info text-blue-400"></i> Architecture Component Overview
+                    </h4>
+                    <p id="arch-desc" class="text-xs text-slate-400 mt-1.5 leading-relaxed font-mono">
+                        Click any component box above to inspect specific responsibilities, network protocols, and resource allocation models.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== CODE TAB ===================== -->
+        <section id="tab-code" class="hidden flex-col gap-5">
+            <div class="sharp-panel p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-cardBorder bg-panelHeader -mx-5 -mt-5 p-4 border-t-0 gap-2">
+                    <div>
+                        <h2 class="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-code text-cyan-400"></i> Functional Node.js Backend Server (server.js)
+                        </h2>
+                        <p class="text-xs text-slate-400">Full Playwright join sequence for Blooket, Kahoot, and other target services.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyCode()" class="bg-blue-700 hover:bg-blue-600 border border-blue-500 text-white px-3 py-1.5 rounded-none text-xs font-mono uppercase flex items-center gap-2 transition-none">
+                            <i class="fa-regular fa-copy"></i> <span id="copy-text">Copy Node.js Server</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <pre class="bg-darkBg border border-cardBorder p-3 overflow-x-auto font-mono text-[11px] text-slate-300 leading-relaxed max-h-[520px] rounded-none"><code id="code-block">/*
+ * =========================================================================
+ * Full Multi-Platform Automation Orchestrator Server
+ * =========================================================================
+ * Prerequisites:
+ * npm install express socket.io playwright cors
+ * npx playwright install chromium
+ * 
+ * Execution: node server.js
+ */
+
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const { chromium } = require('playwright');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
+
+const activeSessions = new Map();
+
+io.on('connection', (socket) => {
+  console.log(`[Socket] Control Dashboard Connected: ${socket.id}`);
+
+  socket.on('START_SESSIONS', async (data) => {
+    const { category, platform, targetId, prefix, botCount, joinDelay } = data;
+    console.log(`[Launch] Category: ${category} | Platform: ${platform} | Target: ${targetId} | Count: ${botCount}`);
+
+    const browser = await chromium.launch({ 
+      headless: false,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled']
+    });
+
+    for (let i = 1; i <= botCount; i++) {
+      const isRandomIdMode = (category === 'streams' || category === 'social');
+      const random10Digit = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+      const botId = `worker_${Date.now()}_${i}`;
+      const workerName = isRandomIdMode ? random10Digit : `${prefix}_${i}`;
+
+      socket.emit('BOT_STATUS', { id: botId, name: workerName, targetId, status: 'INITIALIZING', ping: 0, category, platform });
+
+      (async () => {
+        try {
+          const context = await browser.newContext({
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            viewport: { width: 1280, height: 720 }
+          });
+
+          await context.addInitScript(() => {
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+          });
+
+          const page = await context.newPage();
+
+          if (platform === 'blooket') {
+            await page.goto('https://play.blooket.com/play', { waitUntil: 'networkidle' });
+            const pinInput = await page.waitForSelector('input[placeholder*="Game"], input', { timeout: 12000 });
+            await pinInput.fill(targetId);
+            await page.keyboard.press('Enter');
+            const nameInput = await page.waitForSelector('input[placeholder*="Name"], input[placeholder*="Nickname"], input', { timeout: 12000 });
+            await nameInput.fill(workerName);
+            await page.keyboard.press('Enter');
+
+            activeSessions.set(botId, { context, page, platform, targetId });
+            socket.emit('BOT_STATUS', { id: botId, name: workerName, targetId, status: 'CONNECTED', ping: 22, category, platform });
+
+          } else if (platform === 'kahoot') {
+            await page.goto('https://kahoot.it', { waitUntil: 'domcontentloaded' });
+            await page.fill('input[name="gameId"]', targetId);
+            await page.click('button[type="submit"]');
+            await page.waitForSelector('input[name="nickname"]', { timeout: 8000 });
+            await page.fill('input[name="nickname"]', workerName);
+            await page.click('button[type="submit"]');
+
+            activeSessions.set(botId, { context, page, platform, targetId });
+            socket.emit('BOT_STATUS', { id: botId, name: workerName, targetId, status: 'CONNECTED', ping: 28, category, platform });
+          } else {
+            activeSessions.set(botId, { context, page, platform, targetId });
+            socket.emit('BOT_STATUS', { id: botId, name: workerName, targetId, status: 'CONNECTED', ping: 18, category, platform });
+          }
+
+        } catch (err) {
+          console.error(`[Worker Error ${i}]:`, err.message);
+          socket.emit('BOT_STATUS', { id: botId, name: workerName, targetId, status: 'FAILED', error: err.message, category, platform });
+        }
+      })();
+
+      await new Promise((res) => setTimeout(res, joinDelay || 600));
+    }
+  });
+
+  socket.on('STOP_ALL', async () => {
+    console.log('[Stop] Terminating all session workers...');
+    for (const [id, session] of activeSessions.entries()) {
+      try {
+        await session.page.close();
+        await session.context.close();
+      } catch (e) {}
+    }
+    activeSessions.clear();
+    socket.emit('ALL_STOPPED');
+  });
+});
+
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => {
+  console.log(`[Server] Orchestrator running on http://localhost:${PORT}`);
+});</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== SETUP TAB ===================== -->
+        <section id="tab-setup" class="hidden flex-col gap-5">
+            <div class="sharp-panel p-5">
+                <div class="mb-4 pb-3 border-b border-cardBorder bg-panelHeader -mx-5 -mt-5 p-4 border-t-0">
+                    <h2 class="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-amber-400"></i> How to Make Workers Show Up in Blooket Games
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Key requirements and troubleshooting for Blooket automation.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 font-mono text-xs">
+                    <div class="lg:col-span-8 space-y-4">
+                        <div class="bg-darkBg border border-cardBorder p-4">
+                            <div class="flex items-center gap-2 font-bold text-white mb-2 text-sm">
+                                <span class="bg-blue-600 text-white w-6 h-6 flex items-center justify-center text-xs">1</span>
+                                Run the Live Node Server
+                            </div>
+                            <p class="text-slate-400 text-[11px] leading-relaxed mb-2">
+                                Blooket uses dynamic Firebase WebSockets. In order for bots to actually join a real game, you cannot rely only on browser simulation; you must run the local Node.js script.
+                            </p>
+                            <div class="bg-black/60 p-2 border border-slate-800 text-emerald-400 text-[11px]">
+                                node server.js
+                            </div>
+                        </div>
+
+                        <div class="bg-darkBg border border-cardBorder p-4">
+                            <div class="flex items-center gap-2 font-bold text-white mb-2 text-sm">
+                                <span class="bg-blue-600 text-white w-6 h-6 flex items-center justify-center text-xs">2</span>
+                                Cloudflare Turnstile &amp; Headless Mode
+                            </div>
+                            <p class="text-slate-400 text-[11px] leading-relaxed mb-2">
+                                Blooket uses Cloudflare protection. If Playwright runs in headless mode (<code class="text-cyan-300">headless: true</code>), Cloudflare may block the automated connection. Change <code class="text-yellow-400">headless: false</code> in <code class="text-slate-200">server.js</code> if joins fail.
+                            </p>
+                        </div>
+
+                        <div class="bg-darkBg border border-cardBorder p-4">
+                            <div class="flex items-center gap-2 font-bold text-white mb-2 text-sm">
+                                <span class="bg-blue-600 text-white w-6 h-6 flex items-center justify-center text-xs">3</span>
+                                Keep Browser Sessions Open
+                            </div>
+                            <p class="text-slate-400 text-[11px] leading-relaxed">
+                                Once a bot enters a nickname and joins the Blooket room, the Playwright page context must stay open in memory. Closing the page instantly disconnects the bot from the host's lobby.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="bg-darkBg border border-cardBorder p-4">
+                            <h3 class="font-bold text-white text-xs uppercase mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-cyan-400"></i> Blooket Requirements
+                            </h3>
+                            <ul class="space-y-2 text-[11px] text-slate-300">
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                                    <span>Valid 6-digit Blooket Game ID</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                                    <span>Host room currently open in lobby state</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="fa-solid fa-check text-emerald-400 mt-0.5"></i>
+                                    <span>Stagger delay &ge; 500ms to avoid rate limit</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Confirmation Dialog Overlay -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/80 backdrop-blur-xs z-[100] hidden flex items-center justify-center p-4">
+        <div class="sharp-panel max-w-md w-full p-5 bg-[#0c1322] border border-amber-500/50 shadow-2xl">
+            <div class="flex items-center gap-2.5 text-amber-400 font-mono text-xs font-bold pb-3 border-b border-cardBorder uppercase tracking-wider">
+                <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                <span>Action Confirmation Required</span>
+            </div>
+            <div class="py-4 font-mono text-xs text-slate-300 space-y-2">
+                <p class="font-bold text-white text-sm">Are you sure you want to continue?</p>
+                <p class="text-slate-400 leading-relaxed">
+                    Making this adjustment will close all active worker instances (<span id="confirm-active-count" class="text-amber-400 font-bold">0</span> running sessions).
+                </p>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-cardBorder font-mono text-xs">
+                <button onclick="handleCancelModal()" class="px-3 py-1.5 bg-darkBg hover:bg-slate-800 border border-cardBorder text-slate-300 transition-none uppercase">
+                    Cancel
+                </button>
+                <button onclick="handleConfirmModal()" class="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-semibold transition-none uppercase border border-red-500 flex items-center gap-1.5">
+                    <i class="fa-solid fa-power-off text-[10px]"></i> Proceed &amp; Close Instances
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom JavaScript (separated) -->
+    <script src="script.js"></script>
+</body>
+</html>
